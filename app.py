@@ -6,10 +6,10 @@ from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_community.vectorstores import FAISS
 from langchain_groq import ChatGroq
-# Modern & Backward-Compatible Imports
-from langchain.chains import create_retrieval_chain
-from langchain.chains.combine_documents import create_stuff_documents_chain
+
+# Modern LCEL Imports (Zero import errors across all versions)
 from langchain_core.prompts import ChatPromptTemplate
+from langchain_core.output_parsers import StrOutputParser
 
 PDF_URL = "https://www.na.gov.pk/uploads/documents/1470910659_707.pdf"
 LOCAL_PDF = "PECA_2016.pdf"
@@ -21,7 +21,6 @@ st.caption("RAG Legal Assistant for Pakistan's Prevention of Electronic Crimes A
 # --- Sidebar Configuration ---
 st.sidebar.header("⚙️ App Settings")
 
-# Check Streamlit Secrets first, fallback to user input
 secret_api_key = st.secrets.get("GROQ_API_KEY", "")
 groq_api_key = st.sidebar.text_input("Enter Groq API Key:", type="password", value=secret_api_key)
 
@@ -82,12 +81,16 @@ Strict Guidelines:
 
 Context:
 {{context}}
+
+Question:
+{{input}}
 """
 
-prompt = ChatPromptTemplate.from_messages([
-    ("system", system_prompt_str),
-    ("human", "{input}"),
-])
+prompt = ChatPromptTemplate.from_template(system_prompt_str)
+
+# Helper function to format retrieved documents
+def format_docs(docs):
+    return "\n\n".join(doc.page_content for doc in docs)
 
 # --- Chat Interface ---
 if "messages" not in st.session_state:
@@ -106,17 +109,20 @@ if user_query := st.chat_input("Ask a question about Pakistani Cyber Law (PECA 2
         with st.spinner("Analyzing PECA 2016 provisions..."):
             try:
                 llm = ChatGroq(groq_api_key=groq_api_key, model_name="llama-3.3-70b-versatile", temperature=0.2)
-                question_answer_chain = create_stuff_documents_chain(llm, prompt)
-                rag_chain = create_retrieval_chain(retriever, question_answer_chain)
                 
-                response = rag_chain.invoke({"input": user_query})
-                answer = response["answer"]
+                # Fetch retrieved documents
+                retrieved_docs = retriever.invoke(user_query)
+                context_str = format_docs(retrieved_docs)
+                
+                # Build LCEL Chain
+                chain = prompt | llm | StrOutputParser()
+                answer = chain.invoke({"context": context_str, "input": user_query})
                 
                 st.markdown(answer)
                 st.session_state.messages.append({"role": "assistant", "content": answer})
                 
                 with st.expander("🔍 View Retrieved Legal Context"):
-                    for idx, doc in enumerate(response["context"]):
+                    for idx, doc in enumerate(retrieved_docs):
                         st.markdown(f"**Source Chunk {idx+1} (Page {doc.metadata.get('page', 'N/A')}):**")
                         st.text(doc.page_content)
             except Exception as e:
