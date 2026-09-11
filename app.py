@@ -6,7 +6,9 @@ from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_community.vectorstores import FAISS
 from langchain_groq import ChatGroq
-from langchain.chains import create_retrieval_chain
+
+# Corrected Imports for LangChain v0.2+
+from langchain.chains.retrieval import create_retrieval_chain
 from langchain.chains.combine_documents import create_stuff_documents_chain
 from langchain_core.prompts import ChatPromptTemplate
 
@@ -20,7 +22,9 @@ st.caption("RAG Legal Assistant for Pakistan's Prevention of Electronic Crimes A
 # --- Sidebar Configuration ---
 st.sidebar.header("⚙️ App Settings")
 
-groq_api_key = st.sidebar.text_input("Enter Groq API Key:", type="password", value=os.getenv("GROQ_API_KEY", ""))
+# Check Streamlit Secrets first, fallback to user input
+secret_api_key = st.secrets.get("GROQ_API_KEY", "")
+groq_api_key = st.sidebar.text_input("Enter Groq API Key:", type="password", value=secret_api_key)
 
 technicality = st.sidebar.select_slider(
     "Technicality / Explanation Style",
@@ -55,7 +59,7 @@ def init_vector_store():
     return vectorstore
 
 if not groq_api_key:
-    st.info("👈 Please enter your Groq API Key in the sidebar to proceed.")
+    st.info("👈 Please enter your Groq API Key in the sidebar or Secrets to proceed.")
     st.stop()
 
 try:
