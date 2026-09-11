@@ -9,7 +9,7 @@ from langchain_groq import ChatGroq
 # Modern & Backward-Compatible Imports
 from langchain.chains import create_retrieval_chain
 from langchain.chains.combine_documents import create_stuff_documents_chain
-from langchain_core.prompts import ChatPromptTemplatefrom langchain_core.prompts import ChatPromptTemplate
+from langchain_core.prompts import ChatPromptTemplate
 
 PDF_URL = "https://www.na.gov.pk/uploads/documents/1470910659_707.pdf"
 LOCAL_PDF = "PECA_2016.pdf"
