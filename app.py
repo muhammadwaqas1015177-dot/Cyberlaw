@@ -108,7 +108,7 @@ if user_query := st.chat_input("Ask a question about Pakistani Cyber Law (PECA 2
     with st.chat_message("assistant"):
         with st.spinner("Analyzing PECA 2016 provisions..."):
             try:
-                llm = ChatGroq(groq_api_key=groq_api_key, model_name="llama-3.1-70b-versatile", temperature=0.2)
+                llm = ChatGroq(groq_api_key=groq_api_key, model_name="llama3-70b-8192", temperature=0.2)
                 
                 # Fetch retrieved documents
                 retrieved_docs = retriever.invoke(user_query)
